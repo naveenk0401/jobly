@@ -1,0 +1,20 @@
+# Environments
+.env
+.env.local
+.venv/
+venv/
+__pycache__/
+
+# Next.js
+.next/
+out/
+build/
+
+# Node
+node_modules/
+package-lock.json
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
