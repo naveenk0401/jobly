@@ -5,6 +5,7 @@ from fastapi import (
 from database import get_db
 from utils.pdf_parser import extract_text
 from utils.supabase_client import upload_resume
+from utils.embedder import embed
 from bson import ObjectId
 from datetime import datetime
 
@@ -47,13 +48,18 @@ async def upload_resume_endpoint(
         user_id, file_bytes, filename
     )
 
+    # Generate embedding for AI matching
+    print("[Resume] Generating embedding...")
+    embedding = embed(parsed_text)
+    print(f"[Resume] Embedding done: {len(embedding)} dims")
+
     # Store metadata in MongoDB
     doc = {
         "user_id":     ObjectId(user_id),
         "filename":    filename,
         "file_url":    file_url,
         "parsed_text": parsed_text,
-        "embedding":   [],     # filled Day 4
+        "embedding":   embedding,
         "char_count":  len(parsed_text),
         "uploaded_at": datetime.utcnow(),
     }
@@ -68,8 +74,10 @@ async def upload_resume_endpoint(
         "status":               "uploaded",
         "file_url":             file_url,
         "char_count":           len(parsed_text),
+        "embedding_dims":       len(embedding),
+        "has_embedding":        True,
         "parsed_text_preview":  parsed_text[:200] + "...",
-        "message": "Resume uploaded to Supabase and parsed"
+        "message": "Resume uploaded to Supabase and parsed with embeddings"
     }
 
 @router.get("/{user_id}")

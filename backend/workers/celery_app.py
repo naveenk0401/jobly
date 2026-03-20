@@ -12,7 +12,12 @@ if platform.system() == "Windows":
 app = Celery(
     "jobly",
     broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL
+    backend=settings.REDIS_URL,
+    include=[
+        "workers.scrape_tasks", 
+        "workers.match_tasks", 
+        "workers.apply_tasks"
+    ]
 )
 
 app.conf.task_serializer     = "json"
