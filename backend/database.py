@@ -1,12 +1,21 @@
+import dns.resolver
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import settings
+
+# Force Google DNS for SRV resolution (fixes network/VPN timeouts)
+dns.resolver.default_resolver = dns.resolver.Resolver(configure=False)
+dns.resolver.default_resolver.nameservers = ["8.8.8.8", "1.1.1.1"]
 
 client = None
 db = None
 
 async def connect_db():
     global client, db
-    client = AsyncIOMotorClient(settings.MONGO_URI)
+    client = AsyncIOMotorClient(
+        settings.MONGO_URI,
+        serverSelectionTimeoutMS=10000,
+        connectTimeoutMS=10000
+    )
     db = client[settings.MONGO_DB]
 
     # Create all indexes
