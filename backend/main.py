@@ -7,6 +7,10 @@ from api import users, resumes, jobs, applications, autopilot
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_db()
+    print("--- REGISTERED ROUTES ---")
+    for route in app.routes:
+        methods = getattr(route, "methods", [])
+        print(f"ROUTE: {route.path} {list(methods)}")
     yield
     await close_db()
 

@@ -4,6 +4,7 @@ from models.application import ApplyRequest
 from services.apply_service import ApplyService
 from services.stats_service import StatsService
 from workers.apply_tasks import apply_to_job
+from workers.match_tasks import match_new_jobs_for_user
 
 router = APIRouter()
 
@@ -79,3 +80,51 @@ async def get_applications(
         user_id, status, limit
     )
     return {"total": len(apps), "applications": apps}
+
+@router.post("/match")
+async def trigger_match(
+    user_id: str = Query(...),
+    limit:   int = Query(50, ge=1, le=200),
+    db=Depends(get_db)
+):
+    """
+    Manually triggers AI matching for a user.
+    Scores the last N unmatched jobs against the resume.
+    Useful for testing — autopilot auto-triggers this.
+    """
+    from bson import ObjectId
+
+    # Get IDs of jobs not yet matched for this user
+    already_applied = await db.applications.distinct(
+        "job_id",
+        {"user_id": ObjectId(user_id)}
+    )
+
+    cursor = db.jobs.find(
+        {
+            "_id":       {"$nin": already_applied},
+            "is_active": True
+        }
+    ).sort("scraped_at", -1).limit(limit)
+
+    job_ids = []
+    async for job in cursor:
+        job_ids.append(str(job["_id"]))
+
+    if not job_ids:
+        return {
+            "status":  "nothing_to_match",
+            "message": "All jobs already matched or "
+                       "no jobs in database",
+            "count":   0
+        }
+
+    match_new_jobs_for_user.delay(user_id, job_ids)
+
+    return {
+        "status":  "queued",
+        "message": f"Matching {len(job_ids)} jobs "
+                   f"against resume",
+        "count":   len(job_ids),
+        "user_id": user_id
+    }
