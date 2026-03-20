@@ -1,19 +1,4 @@
-try:
-    from playwright.async_api import async_playwright
-except ImportError:
-    # Mock for Python 3.14.3 compatibility
-    class MockPlaywright:
-        async def __aenter__(self): return self
-        async def __aexit__(self, *args): pass
-        async def chromium(self): return self
-        async def launch(self, **kwargs): return self
-        async def new_context(self, **kwargs): return self
-        async def new_page(self): return self
-        async def goto(self, *args, **kwargs): pass
-        async def wait_for_load_state(self, *args, **kwargs): pass
-        async def query_selector_all(self, *args, **kwargs): return []
-        async def close(self): pass
-    async_playwright = MockPlaywright
+from playwright.async_api import async_playwright
 from scrapers.base import BaseScraper
 from utils.dedup import make_hash
 from datetime import datetime
