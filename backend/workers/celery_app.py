@@ -1,6 +1,13 @@
 from celery import Celery
 from celery.schedules import crontab
 from config import settings
+import asyncio
+import platform
+
+if platform.system() == "Windows":
+    asyncio.set_event_loop_policy(
+        asyncio.WindowsSelectorEventLoopPolicy()
+    )
 
 app = Celery(
     "jobly",
